@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conserve-H₂O</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom, #e0f6ff, #b3e0ff);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .bg-water {
+            background-color: #f0f9ff;
+        }
+        .btn-primary {
+            background: linear-gradient(to right, #3b82f6, #2563eb);
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid white;
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(to right, #2563eb, #1d4ed8);
+        }
+        .btn-water {
+            background: linear-gradient(to right, #dbeafe, #bfdbfe);
+            color: #1e40af;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid #3b82f6;
+        }
+        .btn-water:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(to right, #bfdbfe, #93c5fd);
+        }
+        .btn-water.active {
+            background: linear-gradient(to right, #3b82f6, #2563eb);
+            color: white;
+            border: 2px solid #1e40af;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #e0f2fe;
+            border-radius: 10px;
+            border: 2px solid #bfdbfe;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #3b82f6, #2563eb);
+            border-radius: 10px;
+            border: 2px solid #bfdbfe;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to bottom, #2563eb, #1d4ed8);
+        }
+        .notification-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(to right, #10b981, #059669);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            transform: translateY(100%);
+            opacity: 0;
+            z-index: 50;
+            border: 2px solid #a7f3d0;
+        }
+        .notification-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.25);
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            border: 3px solid #3b82f6;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .form-group:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+        }
+        .form-group label {
+            display: block;
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        .water-drop {
+            animation: drip 3s infinite;
+        }
+        @keyframes drip {
+            0% { transform: translateY(0); opacity: 0.7; }
+            50% { transform: translateY(20px); opacity: 1; }
+            100% { transform: translateY(0); opacity: 0.7; }
+        }
+        .highlight {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+            transition: all 0.3s ease;
+        }
+        .tip-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .tip-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .water-wave {
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+            background-size: 200% 100%;
+            animation: wave 3s linear infinite;
+            border-radius: 10px;
+        }
+        @keyframes wave {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+    </style>
+</head>
+<body class="bg-water">
+
+    <!-- Hero Section with Images -->
+    <div class="relative w-full h-screen mb-12">
+        <div class="absolute inset-0 z-0 overflow-hidden">
+            <!-- Background images with blur and overlay for better text readability -->
+            <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="absolute top-0 left-0 w-1/2 h-1/2 object-cover blur-sm opacity-50" alt="Image of water management">
+            <img src="https://images.unsplash.com/photo-1570804439973-9a00c94b2d2c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" class="absolute bottom-0 right-0 w-1/2 h-1/2 object-cover blur-sm opacity-50" alt="Image of water filtration">
+            
+            <!-- Animated water drops -->
+            <div class="absolute top-1/4 left-1/4 w-4 h-4 bg-blue-400 rounded-full water-drop opacity-70"></div>
+            <div class="absolute top-1/3 right-1/3 w-3 h-3 bg-blue-400 rounded-full water-drop opacity-70" style="animation-delay: 0.5s;"></div>
+            <div class="absolute bottom-1/4 left-1/3 w-5 h-5 bg-blue-400 rounded-full water-drop opacity-70" style="animation-delay: 1s;"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-3 h-3 bg-blue-400 rounded-full water-drop opacity-70" style="animation-delay: 1.5s;"></div>
+        </div>
+        <div class="relative z-10 flex flex-col items-center justify-center h-full text-center text-white p-4">
+            <h1 class="text-4xl sm:text-5xl font-bold mb-4 drop-shadow-md bg-clip-text text-opaque bg-gradient-to-r from-blue-500 to-blue-800">Conserve-H<sub class="text-3xl">2</sub>O</h1>
+            <p class="text-xl sm:text-2xl font-medium mb-8 drop-shadow-md text-blue-900">"Save water, Save generations"</p>
+            <div class="water-wave w-64 mt-4"></div>
+        </div>
+    </div>
+
+    <div class="main-container w-full max-w-4xl p-8 bg-white rounded-2xl shadow-2xl flex flex-col items-center space-y-8 my-8 border-4 border-blue-200">
+        <header class="text-center space-y-2">
+            <div class="w-24 h-24 mx-auto text-blue-500">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 21c-2.88 0-5.76-.5-8.49-1.5c-.32-.12-.4-.51-.23-.74.17-.23.51-.31.83-.19C6.88 19.14 9.4 19.67 12 19.67c2.6 0 5.12-.53 7.89-1.92.32-.12.66-.04.83.19.17.23.09.62-.23.74-2.73 1-5.61 1.5-8.49 1.5z" opacity=".1"/>
+                    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.95.58 3.76 1.57 5.25.13.2.22.45.26.7.10.58-.23 1.15-.75 1.34-1.28.48-2.6.71-3.96.71C2.56 19 2 18.56 2 18c0-.56.56-1 1.25-1 1.02 0 2.05-.18 3.05-.53.28-.1.54-.23.79-.38.58-.33.87-.9.89-1.53.05-.15.08-.31.08-.47v-2.31c.2-.33.45-.66.75-.95 1.6-1.55 3.51-2.9 5.56-4.05.3-.18.6-.37.90-.55.26-.14.53-.26.80-.38.07-.03.14-.07.21-.10.17-.07.34-.14.51-.20.20-.07.41-.10.62-.10.49-.01.99.16 1.40.50.34.28.62.62.83 1.01.20.36.30.75.30 1.15 0 2.10-1.35 4.02-3.80 6.50-2.26 2.38-4.14 4.54-5.38 6.66-.05.08-.10.17-.14.25-.03.06-.06.13-.09.19-.08.19-.17.38-.27.56-.20.37-.40.74-.63 1.07-.30.43-.63.85-.98 1.25-1.53 1.74-3.52 3.12-5.74 4.07.13.25.26.50.38.74.83.50 1.70.92 2.60 1.25.75.27 1.50.50 2.25.68.86.20 1.72.30 2.59.30 5.52 0 10-4.48 10-10C22 6.48 17.52 2 12 2zm0 18.5c-2.40 0-4.78-.45-7.06-1.34.25-.10.50-.22.75-.36.95-.57 1.83-1.20 2.65-1.90 2.50-2.19 4.38-4.22 5.50-6.31 1.13-2.11 1.82-4.13 1.82-5.99 0-.40-.10-.77-.30-1.12-.17-.33-.42-.64-.73-.89-.30-.25-.66-.41-1.05-.45-.44-.06-.88.08-1.25.32-.40.25-.76.56-1.06.91-1.90 2.20-3.80 4.20-5.70 6.10-1.60 1.60-3.20 3.10-4.60 4.60-.26.28-.50.59-.72.90-.22.30-.40.62-.57.94-1.07 1.74-1.74 3.70-1.92 5.70.07 0 .15-.01.22-.01 1.30 0 2.58.18 3.82.53.50.15 1.02.26 1.54.33 1.75.25 3.50.38 5.25.38 5.09 0 9.20-4.11 9.20-9.20C21.20 6.32 17.09 2.20 12 2.20zm-2.80 14.5l-2.45-2.50c-.75-.75-.75-1.95 0-2.70s1.95-.75 2.70 0l1.25 1.25 2.75-2.75c.75-.75 1.95-.75 2.70 0s.75 1.95 0 2.70l-4 4c-.75.75-1.95.75-2.70 0z"/>
+                </svg>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-bold text-blue-800">Conserve-H<sub class="text-3xl">2</sub>O</h1>
+            <p class="text-xl sm:text-2xl text-blue-600 font-medium">"Save water, Save generations"</p>
+        </header>
+
+        <nav class="flex flex-col sm:flex-row justify-center gap-4 w-full">
+            <button id="btn-tips" class="btn-water w-full sm:w-auto active">Get tips</button>
+            <button id="btn-advice" class="btn-water w-full sm:w-auto">Get advice</button>
+            <button id="btn-help" class="btn-water w-full sm:w-auto">Ask for help</button>
+        </nav>
+
+        <div id="content-container" class="w-full h-[60vh] max-h-[600px] overflow-y-auto p-6 bg-blue-50 rounded-lg shadow-inner border-2 border-blue-200 custom-scrollbar highlight">
+            <div class="text-center text-gray-500 space-y-4">
+                <p class="text-lg font-semibold">Welcome to Conserve-H<sub class="text-base">2</sub>O!</p>
+                <p>Select an option above to get started on your water conservation journey.</p>
+                <p>Water management is the process of planning, developing, distributing, and managing the optimum use of water resources. </p>
+                <div class="water-wave w-full mt-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-toast" class="notification-toast">
+        Advice saved!
+    </div>
+
+    <div id="help-modal" class="modal hidden">
+        <div class="modal-content">
+            <span id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl cursor-pointer">&times;</span>
+            <h2 class="text-2xl font-bold text-center text-blue-700 mb-4">Ask for Help</h2>
+            <p class="text-gray-700 mb-4">Our AI assistant is here to help! Ask any question about water conservation.</p>
+            <div class="space-y-4">
+                <textarea id="help-question" class="w-full h-32 p-4 bg-white border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., How can I save water in my garden during a drought?"></textarea>
+                <div class="flex justify-end">
+                    <button id="submit-help" class="btn-primary">Submit Question</button>
+                </div>
+            </div>
+            <div id="help-response" class="mt-4 p-4 bg-blue-50 rounded-md text-gray-700 hidden border-2 border-blue-200">
+                <p class="font-semibold">AI Assistant:</p>
+                <p id="ai-answer" class="mt-2 italic"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // UI Elements
+        const btnTips = document.getElementById('btn-tips');
+        const btnAdvice = document.getElementById('btn-advice');
+        const btnHelp = document.getElementById('btn-help');
+        const contentContainer = document.getElementById('content-container');
+        const notificationToast = document.getElementById('notification-toast');
+        const helpModal = document.getElementById('help-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const submitHelpBtn = document.getElementById('submit-help');
+        const helpQuestionInput = document.getElementById('help-question');
+        const helpResponseDiv = document.getElementById('help-response');
+        const aiAnswerP = document.getElementById('ai-answer');
+
+        // Set initial active button
+        setActiveButton(btnTips);
+
+        // Event listeners for navigation
+        btnTips.addEventListener('click', () => {
+            showTips();
+            setActiveButton(btnTips);
+        });
+        btnAdvice.addEventListener('click', () => {
+            showAdviceForm();
+            setActiveButton(btnAdvice);
+        });
+        btnHelp.addEventListener('click', () => {
+            openHelpModal();
+            setActiveButton(btnHelp);
+        });
+
+        // Modal event listeners
+        closeModalBtn.addEventListener('click', closeHelpModal);
+        window.addEventListener('click', (event) => {
+            if (event.target === helpModal) {
+                closeHelpModal();
+            }
+        });
+        submitHelpBtn.addEventListener('click', handleHelpSubmission);
+
+        // Function to set active button
+        function setActiveButton(activeBtn) {
+            [btnTips, btnAdvice, btnHelp].forEach(btn => {
+                btn.classList.remove('active');
+            });
+            activeBtn.classList.add('active');
+        }
+
+        // Function to render the "Get tips" section
+        function showTips() {
+            contentContainer.innerHTML = `
+                <h2 class="text-2xl font-bold text-center text-blue-700 mb-6 border-b-2 border-blue-200 pb-2">Water Saving Tips</h2>
+                <div class="space-y-6 text-gray-700 leading-relaxed">
+                    <p class="text-center bg-blue-100 p-4 rounded-lg border border-blue-200">Water conservation is a critical practice for protecting our planet's most valuable resource. By making small changes in our daily habits, we can collectively make a significant impact.</p>
+                    
+                    <div class="tip-item">
+                        <h3 class="text-lg font-semibold text-blue-600 mb-2">In the Bathroom:</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Shorten Your Showers:</strong> Aim for a shower of 5 minutes or less. Using a timer can help.</li>
+                            <li><strong>Turn Off the Faucet:</strong> While brushing your teeth or shaving, don't let the water run. This can save up to 4 gallons per minute.</li>
+                            <li><strong>Fix Leaky Faucets:</strong> A single leaky faucet can waste hundreds of gallons of water per year. Regularly check for and fix leaks promptly.</li>
+                            <li><strong>Install Water-Efficient Fixtures:</strong> Low-flow showerheads and toilets can drastically reduce water consumption without affecting performance.</li>
+                        </ul>
+                    </div>
+
+                    <div class="tip-item">
+                        <h3 class="text-lg font-semibold text-blue-600 mb-2">In the Kitchen:</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Run Full Loads:</strong> Only run your dishwasher and washing machine when they are completely full. This reduces the number of cycles you need to run.</li>
+                            <li><strong>Wash Dishes Efficiently:</strong> If washing by hand, fill the sink with water instead of letting the tap run. Scrape food off plates instead of rinsing.</li>
+                            <li><strong>Thaw Food in the Refrigerator:</strong> Avoid thawing frozen food under a running tap. Plan ahead and move items to the fridge overnight.</li>
+                        </ul>
+                    </div>
+
+                    <div class="tip-item">
+                        <h3 class="text-lg font-semibold text-blue-600 mb-2">Outdoors:</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Water Plants Wisely:</strong> Water your lawn and garden early in the morning or late in the evening to reduce evaporation. Use a watering can or a soaker hose instead of a sprinkler.</li>
+                            <li><strong>Install a Rain Barrel:</strong> Collect rainwater to use for watering plants, which is free and good for your garden. </li>
+                            <li><strong>Wash Your Car with a Bucket:</strong> Use a bucket and sponge to wash your car instead of a running hose.</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-center bg-green-100 p-4 rounded-lg border border-green-200 mt-6">By adopting these simple practices, you can become a water-saving champion and contribute to a more sustainable future for everyone.</p>
+                </div>
+            `;
+        }
+
+        // Function to render the "Get advice" section
+        function showAdviceForm() {
+            contentContainer.innerHTML = `
+                <h2 class="text-2xl font-bold text-center text-blue-700 mb-6 border-b-2 border-blue-200 pb-2">Get Personalized Advice</h2>
+                <form id="advice-form" class="space-y-4">
+                    <div class="form-group">
+                        <label for="drinkingWater" class="block text-gray-700 font-medium">1) How much litres of water do you drink daily?</label>
+                        <select id="drinkingWater" name="drinkingWater" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Less than 1">Less than 1</option>
+                            <option value="1-2">1-2</option>
+                            <option value="2-3">2-3</option>
+                            <option value="3-4">3-4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bathingMethod" class="block text-gray-700 font-medium">2) What do you use for bathing, shower or by bucket?</label>
+                        <select id="bathingMethod" name="bathingMethod" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Shower">Shower</option>
+                            <option value="Bucket">Bucket</option>
+                            <option value="Any one">Any one (not fixed)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="showerTime" class="block text-gray-700 font-medium">3) If you use shower then how much time do you spend?</label>
+                        <select id="showerTime" name="showerTime" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="5 mins">5 mins</option>
+                            <option value="10 mins">10 mins</option>
+                            <option value="15 mins">15 mins</option>
+                            <option value="More than 15 mins">More than 15 mins</option>
+                            <option value="I use bucket">I use bucket</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bucketsRequired" class="block text-gray-700 font-medium">4) If you use bucket then how many buckets of water do you require?</label>
+                        <select id="bucketsRequired" name="bucketsRequired" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="More than 3">More than 3</option>
+                            <option value="I use shower">I use shower</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="rainwaterHarvesting" class="block text-gray-700 font-medium">5) Do you have rainwater harvesting in your residence?</label>
+                        <select id="rainwaterHarvesting" name="rainwaterHarvesting" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="leakCheck" class="block text-gray-700 font-medium">6) Does you family check water leaks?</label>
+                        <select id="leakCheck" name="leakCheck" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="otherUsage" class="block text-gray-700 font-medium">7) Mention your other usage of water (eg. Watering plants, cooking, cleaning, cleaning vehicles, etc).</label>
+                        <textarea id="otherUsage" name="otherUsage" rows="4" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="flex justify-center">
+                        <button type="submit" class="btn-primary">Get Advice</button>
+                    </div>
+                </form>
+                <div id="advice-output" class="mt-6 text-gray-800 hidden border-2 border-green-200 rounded-lg p-4 bg-green-50"></div>
+                <div id="chart-container" class="mt-8 hidden border-2 border-blue-200 rounded-lg p-4 bg-white">
+                    <canvas id="waterUsageChart"></canvas>
+                </div>
+            `;
+            const adviceForm = document.getElementById('advice-form');
+            const adviceOutput = document.getElementById('advice-output');
+            const chartContainer = document.getElementById('chart-container');
+            let waterUsageChart;
+
+            adviceForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                adviceOutput.classList.add('hidden');
+                chartContainer.classList.add('hidden');
+
+                const drinkingWater = document.getElementById('drinkingWater').value;
+                const bathingMethod = document.getElementById('bathingMethod').value;
+                const showerTime = document.getElementById('showerTime').value;
+                const bucketsRequired = document.getElementById('bucketsRequired').value;
+                const rainwaterHarvesting = document.getElementById('rainwaterHarvesting').value;
+                const leakCheck = document.getElementById('leakCheck').value;
+                const otherUsage = document.getElementById('otherUsage').value;
+
+                // Save user responses to local storage
+                const userResponses = {
+                    drinkingWater,
+                    bathingMethod,
+                    showerTime,
+                    bucketsRequired,
+                    rainwaterHarvesting,
+                    leakCheck,
+                    otherUsage,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('waterUsageData', JSON.stringify(userResponses));
+
+                // Generate advice based on the data
+                let advice = `<p class="text-green-600 font-semibold text-center mb-4">Thank you for sharing your data! Here is your personalized advice:</p>`;
+                
+                if (drinkingWater === "Less than 1") {
+                    advice += `<p>- Staying hydrated is important! Ensure you drink enough water for your health, but be mindful of waste.</p>`;
+                }
+                
+                if (bathingMethod === "Shower" && showerTime === "More than 15 mins") {
+                    advice += `<p>- Consider shortening your showers. A 5-minute shower uses significantly less water and can save you hundreds of liters per month.</p>`;
+                }
+
+                if (bathingMethod === "Bucket" && bucketsRequired === "More than 3") {
+                    advice += `<p>- Try to reduce the number of buckets you use for bathing. Every bucket counts!</p>`;
+                }
+                
+                if (rainwaterHarvesting === "No") {
+                    advice += `<p>- Rainwater harvesting is an excellent way to supplement your water supply for gardening or other non-potable uses. Consider exploring this option. </p>`;
+                }
+
+                if (leakCheck === "No") {
+                    advice += `<p>- A single leaky faucet can waste hundreds of gallons of water per year. Regularly checking for and fixing leaks can make a huge difference.</p>`;
+                }
+
+                if (advice.length < 100) {
+                    advice += `<p>You're already doing a great job at conserving water! Keep up the good work and share these tips with others.</p>`;
+                }
+
+                adviceOutput.innerHTML = `<div class="p-4 bg-white rounded-lg shadow-md">${advice}</div>`;
+                adviceOutput.classList.remove('hidden');
+
+                // Prepare data for the pie chart
+                const data = {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            'rgb(59, 130, 246)', // blue-500
+                            'rgb(34, 197, 94)',  // green-500
+                            'rgb(234, 179, 8)',  // yellow-500
+                            'rgb(239, 68, 68)',  // red-500
+                            'rgb(129, 140, 248)' // indigo-400
+                        ],
+                        hoverOffset: 4
+                    }]
+                };
+
+                // Approximate water usage in liters
+                let showerUsage = 0;
+                let bucketUsage = 0;
+
+                if (bathingMethod === "Shower" && showerTime !== "I use bucket") {
+                    switch(showerTime) {
+                        case '5 mins': showerUsage = 50; break;
+                        case '10 mins': showerUsage = 100; break;
+                        case '15 mins': showerUsage = 150; break;
+                        case 'More than 15 mins': showerUsage = 200; break;
+                    }
+                } else if (bathingMethod === "Bucket" && bucketsRequired !== "I use shower") {
+                    switch(bucketsRequired) {
+                        case '1': bucketUsage = 15; break;
+                        case '2': bucketUsage = 30; break;
+                        case 'More than 3': bucketUsage = 50; break;
+                    }
+                }
+
+                const drinkingUsage = 2; // Average
+                const otherUsageValue = 20; // A placeholder value for 'other usage'
+
+                data.labels.push('Drinking');
+                data.datasets[0].data.push(drinkingUsage);
+                
+                if (showerUsage > 0) {
+                    data.labels.push('Shower');
+                    data.datasets[0].data.push(showerUsage);
+                }
+                
+                if (bucketUsage > 0) {
+                    data.labels.push('Bucket Bathing');
+                    data.datasets[0].data.push(bucketUsage);
+                }
+
+                if (otherUsage.trim() !== '') {
+                    data.labels.push('Other Usage');
+                    data.datasets[0].data.push(otherUsageValue);
+                }
+
+                // Destroy previous chart if it exists
+                if (waterUsageChart) {
+                    waterUsageChart.destroy();
+                }
+
+                // Render the new chart
+                const ctx = document.getElementById('waterUsageChart').getContext('2d');
+                waterUsageChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Approximate Daily Water Usage'
+                            }
+                        }
+                    }
+                });
+
+                chartContainer.classList.remove('hidden');
+                showNotification("Advice saved successfully!");
+            });
+        }
+
+        function openHelpModal() {
+            helpModal.classList.remove('hidden');
+            // Clear previous content
+            helpQuestionInput.value = '';
+            helpResponseDiv.classList.add('hidden');
+        }
+
+        function closeHelpModal() {
+            helpModal.classList.add('hidden');
+        }
+
+        function handleHelpSubmission() {
+            const question = helpQuestionInput.value.trim();
+            if (question === '') {
+                showNotification("Please enter a question.");
+                return;
+            }
+
+            // Simulate an AI response
+            let response = "";
+            const lowerQuestion = question.toLowerCase();
+
+            if (lowerQuestion.includes("garden") || lowerQuestion.includes("plants")) {
+                response = "To save water in your garden, water early in the morning or late in the evening to reduce evaporation. Use mulch to help soil retain moisture and consider planting drought-resistant native plants.";
+            } else if (lowerQuestion.includes("leaks") || lowerQuestion.includes("faucet")) {
+                response = "Checking for leaks is crucial. You can often detect them by listening for dripping sounds. For toilets, add a few drops of food coloring to the tank; if color appears in the bowl without flushing, you have a leak. Fix leaks promptly to save a significant amount of water.";
+            } else if (lowerQuestion.includes("shower")) {
+                response = "To save water during showers, aim for a shorter shower time. Installing a low-flow showerhead can also dramatically reduce water usage without sacrificing water pressure.";
+            } else if (lowerQuestion.includes("laundry")) {
+                response = "For laundry, always run full loads. If you're buying a new washing machine, look for a high-efficiency model, which uses less water and energy.";
+            } else {
+                response = "That's a great question! For now, here's a general tip: every small action counts. Turn off the tap while brushing your teeth, use a bucket to wash your car, and educate others about the importance of water conservation. Thank you for your commitment!";
+            }
+            
+            aiAnswerP.textContent = response;
+            helpResponseDiv.classList.remove('hidden');
+            showNotification("Question submitted!");
+        }
+
+        function showNotification(message) {
+            notificationToast.textContent = message;
+            notificationToast.classList.add('show');
+            setTimeout(() => {
+                notificationToast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize with tips
+        showTips();
+    </script>
+</body>
+</html>
